@@ -1,0 +1,11 @@
+<launch>
+
+  <node pkg="extrinsic_calibrator" type="extrinsic_calibrator_exe" name="camera_lidar_calibration_node" output="screen">
+  </node>
+
+  <node pkg="extrinsic_calibrator" type="keyboard_publisher_exe" name="keyboard_publisher_node" output="screen">
+  </node>
+
+
+
+</launch>
