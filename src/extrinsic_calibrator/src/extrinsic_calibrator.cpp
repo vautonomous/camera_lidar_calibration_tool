@@ -44,36 +44,30 @@ PointCloudAligner::PointCloudAligner(ros::NodeHandle &nh)
   trans_optimized.setIdentity();
 
 
-  Eigen::Quaterniond q_optimized = {  0.547288, 0.756193, -0.282684, 0.222585};
-  trans_optimized.linear() = q_optimized.toRotationMatrix();
-  trans_optimized.translation() = Eigen::Vector3d { -0.127312, 0.776732, 0.425722};
+  mode = 1;
 
+  // mode 1 calibration
+  // mode 2 test
 
-  timer_pc_publisher_ = nh_.createTimer(ros::Duration(0.1),
-                                        &PointCloudAligner::CallbackSamplePublisher,
-                                        this);
-
-  pub_cloud_ = nh_.advertise<sensor_msgs::PointCloud2>("/cloud", 1, this);
-  pub_cloud_plane_points_cam_ = nh_.advertise<sensor_msgs::PointCloud2>("/cloud_plane_points_cam", 1, this);
-  pub_cloud_plane_points_lid_ = nh_.advertise<sensor_msgs::PointCloud2>("/cloud_plane_points_lid", 1, this);
-  pub_cloud_frustum_colored = nh_.advertise<sensor_msgs::PointCloud2>("/cloud_colored", 1, this);
-  pub_marker_array_ = nh_.advertise<visualization_msgs::MarkerArray>("/plane_normals", 1, this);
-  pub_image_ = it.advertise("/image", 10);
-  pub_undistorted_image_ = it.advertise("/undistorted_image", 10);
-
-  mode = 0;
-  // Find rotation and translation:
-  if (mode == 0) {
-
-
-
-  }
-
-  // Test:
-  if (mode == 1)
+  if (mode == 1 or mode==2)
   {
+    Eigen::Quaterniond q_optimized = {  0.547288, 0.756193, -0.282684, 0.222585};
+    trans_optimized.linear() = q_optimized.toRotationMatrix();
+    trans_optimized.translation() = Eigen::Vector3d { -0.127312, 0.776732, 0.425722};
 
+    timer_pc_publisher_ = nh_.createTimer(ros::Duration(0.1),
+                                          &PointCloudAligner::CallbackSamplePublisher,
+                                          this);
+
+    pub_cloud_ = nh_.advertise<sensor_msgs::PointCloud2>("/cloud", 1, this);
+    pub_cloud_plane_points_cam_ = nh_.advertise<sensor_msgs::PointCloud2>("/cloud_plane_points_cam", 1, this);
+    pub_cloud_plane_points_lid_ = nh_.advertise<sensor_msgs::PointCloud2>("/cloud_plane_points_lid", 1, this);
+    pub_cloud_frustum_colored = nh_.advertise<sensor_msgs::PointCloud2>("/cloud_colored", 1, this);
+    pub_marker_array_ = nh_.advertise<visualization_msgs::MarkerArray>("/plane_normals", 1, this);
+    pub_image_ = it.advertise("/image", 10);
+    pub_undistorted_image_ = it.advertise("/undistorted_image", 10);
   }
+
 
 }
 
@@ -129,7 +123,7 @@ PointCloudAligner::KeyCallback(
     }
 
     // Calculate test stuff:
-    if (mode==1)
+    if (mode==2)
     {
 
       Test::project_lidar_points_to_image_plane(vector_samples[sample_id],
@@ -141,7 +135,7 @@ PointCloudAligner::KeyCallback(
 
 
   }
-  
+
   // press 'o' : to start optimization
   if (msg->data == 111) {
 
@@ -170,13 +164,13 @@ PointCloudAligner::KeyCallback(
 
 
 
-     /*
-      * Solve translation by minimizing distance between lidar plane points and camera planes
-      * after finding rotation
-      */
+    /*
+     * Solve translation by minimizing distance between lidar plane points and camera planes
+     * after finding rotation
+     */
 
-     TranslationSolver translation_solver(vector_samples);
-     Eigen::Vector3d translation_optimized = translation_solver.solve();
+    TranslationSolver translation_solver(vector_samples);
+    Eigen::Vector3d translation_optimized = translation_solver.solve();
 
 
 
@@ -201,7 +195,7 @@ PointCloudAligner::KeyCallback(
 void
 PointCloudAligner::CallbackSamplePublisher(const ros::TimerEvent &) {
 
-  if (mode ==1)
+  if (mode ==2)
   {
     Cloud::Ptr cloud_roi_transformed(new Cloud);
     pcl::transformPointCloud(*vector_samples[sample_id].cloud, *cloud_roi_transformed, trans_optimized);

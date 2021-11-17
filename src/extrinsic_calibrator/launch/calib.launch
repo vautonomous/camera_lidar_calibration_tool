@@ -5,6 +5,8 @@
 
   <node pkg="extrinsic_calibrator" type="keyboard_publisher_exe" name="keyboard_publisher_node" output="screen">
   </node>
+  
+  <node type="rviz" name="rviz" pkg="rviz" args="-d $(find extrinsic_calibrator)/rviz/config.rviz" />
 
 
 
