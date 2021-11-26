@@ -150,7 +150,7 @@ RotationSolver::solve()
 
   Eigen::Quaterniond q_optimized = {qw, qx, qy, qz};
 
-  std::cout << "qw qx qy qz: " << qw << " " << qx << " " << qy << " " << qz << std::endl;
+  std::cout << "qw qx qy qz: " << qw << ", " << qx << ", " << qy << ", " << qz << std::endl;
   std::cout << "Rotation matrix:\n" << q_optimized.toRotationMatrix() << std::endl;
 
   return q_optimized;

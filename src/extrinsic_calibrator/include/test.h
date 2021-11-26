@@ -31,7 +31,8 @@ class Test
                                                   const CalibrationParameters& calibration_parameters,
                                                   const Eigen::Affine3d tf,
                                                   const image_transport::Publisher& pub_undistorted_image_,
-                                                  const ros::Publisher& pub_cloud_frustum_colored);
+                                                  const ros::Publisher& pub_cloud_frustum_colored,
+                                                  const double& max_distance_cam_seen);
 
   static std::tuple<int, int, int> distance_to_color(const double& distance,
                                                     const double& max_distance);

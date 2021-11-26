@@ -42,7 +42,7 @@ class PointCloudAligner {
   void KeyCallback(const std_msgs::Int32::ConstPtr &msg);
   void CallbackClickedPoint(const sensor_msgs::PointCloud2ConstPtr &msg_cloud_selected_points);
 
-  size_t mode;
+  int mode;
   size_t sample_id;
   size_t total_sample_count;
 
@@ -67,6 +67,17 @@ class PointCloudAligner {
   std::vector<Cloud::Ptr> vector_all_planes_lid;
 
   CalibrationParameters calibration_parameters_;
+
+  std::vector<double> dist_coeff;
+  std::vector<double> camera_mat;
+  int pattern_num_width;
+  int pattern_num_height;
+  int pattern_size_mm;
+
+  std::vector<double> vector_q_param;
+  std::vector<double> vector_trans_param;
+  double max_distance_cam_seen;
+
 
 };
 

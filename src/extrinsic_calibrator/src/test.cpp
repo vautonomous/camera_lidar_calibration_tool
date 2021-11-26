@@ -4,7 +4,8 @@ void Test::project_lidar_points_to_image_plane(Sample& sample,
                                                const CalibrationParameters& calibration_parameters,
                                                const Eigen::Affine3d tf,
                                                const image_transport::Publisher& pub_undistorted_image_,
-                                               const ros::Publisher& pub_cloud_frustum_colored)
+                                               const ros::Publisher& pub_cloud_frustum_colored,
+                                               const double& max_distance_cam_seen)
 {
   cv::Mat undistortedImage;
   cv::undistort(sample.image, undistortedImage,
@@ -42,6 +43,7 @@ void Test::project_lidar_points_to_image_plane(Sample& sample,
   cv::Mat undistorted_image_clear;
   undistortedImage.copyTo(undistorted_image_clear);
 
+  size_t count_point_in_img = 0;
   for (const auto &point : sample.cloud_test->points)
   {
     Eigen::Vector4d pos;
@@ -74,18 +76,21 @@ void Test::project_lidar_points_to_image_plane(Sample& sample,
       return distance;
     };
     float dist = getDistance(point);
-    auto color = distance_to_color(dist, 30);
+    auto color = distance_to_color(dist, max_distance_cam_seen);
     int r = std::get<0>(color);
     int g = std::get<1>(color);
     int b = std::get<2>(color);
 
-    int radiusCircle = 1;
+    int radiusCircle = 2;
     cv::Scalar colorCircle1(r,g,b);
-    int thicknessCircle1 = 4;
+    int thicknessCircle1 = 6;
 
     cv::circle(undistortedImage, point_in_image, radiusCircle, colorCircle1, thicknessCircle1);
+    count_point_in_img++;
   }
 
+  if (count_point_in_img == 0)
+    std::cout << "There is no image in the image plane!" << std::endl;
   pcl::transformPointCloud(*frustum_colored, *frustum_colored, tf);
   // Publish frustum colored cloud:
   sensor_msgs::PointCloud2 msg_cloud_frustum_colored;

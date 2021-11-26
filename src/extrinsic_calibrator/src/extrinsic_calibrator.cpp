@@ -11,19 +11,22 @@ PointCloudAligner::PointCloudAligner(ros::NodeHandle &nh)
     is_rot_optim(false),
     mode(0) {
 
-  // TODO(göktuğ): Read calibration parameters from yaml file.
+  dist_coeff.resize(5);
+  camera_mat.resize(9);
 
-  double dist_coeff[5] = {-0.1747665, 0.1280906, 0.0034756, 0.00094896, -0.0472638};
-  double camera_mat[9] = {1060.8, 0, 733.1,
-                          0, 1053.3, 470.1,
-                          0, 0, 1};
-  int pattern_num_width = 8;
-  int pattern_num_height = 6;
-  int pattern_size_mm = 73;
+  nh_.getParam("mode",mode);  nh_.getParam("distortion_coefficients",dist_coeff);
+  nh_.getParam("camera_matrix",camera_mat);
+  nh_.getParam("pattern_num_width",pattern_num_width);
+  nh_.getParam("pattern_num_height",pattern_num_height);
+  nh_.getParam("pattern_size_mm",pattern_size_mm);
+  nh_.getParam("q_optimized",vector_q_param);
+  nh_.getParam("trans_optimized",vector_trans_param);
+  nh_.getParam("max_distance_cam_seen",max_distance_cam_seen);
+
   // ##########################################################################################
 
-  cv::Mat(1, 5, CV_64F, &dist_coeff).copyTo(calibration_parameters_.distcoeff);
-  cv::Mat(3, 3, CV_64F, &camera_mat).copyTo(calibration_parameters_.cameramat);
+  cv::Mat(1, 5, CV_64F, &dist_coeff[0]).copyTo(calibration_parameters_.distcoeff);
+  cv::Mat(3, 3, CV_64F, &camera_mat[0]).copyTo(calibration_parameters_.cameramat);
   calibration_parameters_.patternNum.width = pattern_num_width;
   calibration_parameters_.patternNum.height = pattern_num_height;
   calibration_parameters_.patternSize.width = pattern_size_mm;
@@ -43,17 +46,21 @@ PointCloudAligner::PointCloudAligner(ros::NodeHandle &nh)
 
   trans_optimized.setIdentity();
 
-
-  mode = 1;
-
   // mode 1 calibration
   // mode 2 test
 
   if (mode == 1 or mode==2)
   {
-    Eigen::Quaterniond q_optimized = {  0.547288, 0.756193, -0.282684, 0.222585};
+    // Use this params to test cam lid calibration:
+    Eigen::Quaterniond q_optimized = {vector_q_param[0],
+                                      vector_q_param[1],
+                                      vector_q_param[2],
+                                      vector_q_param[3]};
     trans_optimized.linear() = q_optimized.toRotationMatrix();
-    trans_optimized.translation() = Eigen::Vector3d { -0.127312, 0.776732, 0.425722};
+    trans_optimized.translation() = Eigen::Vector3d {vector_trans_param[0],
+                                                     vector_trans_param[1],
+                                                     vector_trans_param[2]};
+
 
     timer_pc_publisher_ = nh_.createTimer(ros::Duration(0.1),
                                           &PointCloudAligner::CallbackSamplePublisher,
@@ -67,7 +74,11 @@ PointCloudAligner::PointCloudAligner(ros::NodeHandle &nh)
     pub_image_ = it.advertise("/image", 10);
     pub_undistorted_image_ = it.advertise("/undistorted_image", 10);
   }
+  else {
+    std::cout << "Use appropriate mode id!" << std::endl;
+  }
 
+  std::cout << "MODE:" << mode << std::endl;
 
 }
 
@@ -75,7 +86,7 @@ void
 PointCloudAligner::KeyCallback(
     const std_msgs::Int32::ConstPtr &msg) {
   // press 'n' : next pair
-  if (msg->data == 110) {
+  if (msg->data == 110 and sample_id < total_sample_count-1) {
     sample_id++;
     std::cout << "Next sample, id:" << sample_id << std::endl;
   }
@@ -95,42 +106,49 @@ PointCloudAligner::KeyCallback(
         pub_cloud_plane_points_cam_);
     vector_all_planes_cam.push_back(cloud_plane_cam);
 
-    // Not automatic:
-    cloud_selected_points->points.clear();
-    cloud_selected_points = vector_samples[sample_id].cloud;
+    if (!cloud_plane_cam->points.empty())
+    {
+      // Not automatic:
+      cloud_selected_points->points.clear();
+      cloud_selected_points = vector_samples[sample_id].cloud;
 
-    // ############################################################################
+      // ############################################################################
 
-    Cloud::Ptr cloud_plane_lid = FeatureExtractor::extract_lidar_features(vector_samples[sample_id],
-                                                                          cloud_selected_points,
-                                                                          pub_cloud_plane_points_lid_);
-    vector_all_planes_lid.push_back(cloud_plane_lid);
+      Cloud::Ptr cloud_plane_lid = FeatureExtractor::extract_lidar_features(vector_samples[sample_id],
+                                                                            cloud_selected_points,
+                                                                            pub_cloud_plane_points_lid_);
+      vector_all_planes_lid.push_back(cloud_plane_lid);
 
 
-    if (!vector_samples[sample_id].cloud_plane_points_lidar->points.empty()) {
-      vector_samples[sample_id].is_feature_extracted = true;
+      if (!vector_samples[sample_id].cloud_plane_points_lidar->points.empty()) {
+        vector_samples[sample_id].is_feature_extracted = true;
 
-      marker_array_.markers.clear();
-      ROSHandler::PutArrowMarker(vector_samples[sample_id].normal_vector_cam,
-                                 vector_samples[sample_id].middle_point_cam,
-                                 marker_array_, marker_id_);
-      ROSHandler::PutArrowMarker(vector_samples[sample_id].normal_vector_lid,
-                                 vector_samples[sample_id].middle_point_lid,
-                                 marker_array_, marker_id_);
-      pub_marker_array_.publish(marker_array_);
+        marker_array_.markers.clear();
+        ROSHandler::PutArrowMarker(vector_samples[sample_id].normal_vector_cam,
+                                   vector_samples[sample_id].middle_point_cam,
+                                   marker_array_, marker_id_);
+        ROSHandler::PutArrowMarker(vector_samples[sample_id].normal_vector_lid,
+                                   vector_samples[sample_id].middle_point_lid,
+                                   marker_array_, marker_id_);
+        pub_marker_array_.publish(marker_array_);
 
-      std::cout << "Calibration features are extracted." << std::endl;
+        std::cout << "Calibration features are extracted." << std::endl;
+      }
+    } else {
+      std::cout << "Image feature extraction is not succeed." << std::endl;
     }
+
+
 
     // Calculate test stuff:
     if (mode==2)
     {
-
       Test::project_lidar_points_to_image_plane(vector_samples[sample_id],
                                                 calibration_parameters_,
                                                 trans_optimized,
                                                 pub_undistorted_image_,
-                                                pub_cloud_frustum_colored);
+                                                pub_cloud_frustum_colored,
+                                                max_distance_cam_seen);
     }
 
 
@@ -163,7 +181,6 @@ PointCloudAligner::KeyCallback(
                              "camera_frame");
 
 
-
     /*
      * Solve translation by minimizing distance between lidar plane points and camera planes
      * after finding rotation
@@ -189,6 +206,12 @@ PointCloudAligner::KeyCallback(
     point_to_plane_solver.solve();*/
 
     std::cout << "Optimization is done." << std::endl;
+
+    trans_optimized.linear() = q_optimized.toRotationMatrix();
+    trans_optimized.translation() = translation_optimized;
+    Eigen::Vector3d ea = q_optimized.toRotationMatrix().eulerAngles(0, 1, 2); 
+    std::cout << "yaw: " << ea(2)*57.29577 << " pitch: " << ea(1)*57.29577 << " roll: " << ea(0)*57.29577 << std::endl;
+    mode = 2;
   }
 }
 
