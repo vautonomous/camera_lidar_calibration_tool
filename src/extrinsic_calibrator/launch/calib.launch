@@ -10,29 +10,25 @@
 
   <!-- CALIBRATION PARAMETERS:  -->
   <rosparam param="camera_matrix">
-    [
-    1406.4053, 0, 1512.99,
-    0, 1405.749, 956.593,
-    0, 0, 1
-    ]
+    [1838.8, 0, 513.3,0, 1837.2, 500.8,0, 0, 1]
   </rosparam>
 
-  <rosparam param="distortion_coefficients">[-0.28099, 0.09585, -0.0018546, -0.0019270, -0.01573]</rosparam>
+  <rosparam param="distortion_coefficients">[-0.1298037, 0.6944600, -0.0033648, -0.0069838, -4.0532616]</rosparam>
 
   <param name="pattern_num_width"        value="8"/>
   <param name="pattern_num_height"        value="6"/>
   <param name="pattern_size_mm"        value="73"/>
 
   <!-- MODE 1: CALIBRATION | MODE 2: TEST  -->
-  <param name="mode"        value="2"/>
+  <param name="mode"        value="1"/>
 
   <!--TEST  PARAMS-->
   <!--  Quaternion order: qw, qx, qy, qz  -->
   <rosparam param="q_optimized">
-    [-0.43882, -0.758466, 0.405384, -0.258903]
+    [ 0.489864, 0.523795, -0.520363, 0.46512]
   </rosparam>
   <rosparam param="trans_optimized">
-    [-1.29429, 1.52493, 0.778585]
+    [-0.0249818, -0.512679, -0.00421634]
   </rosparam>
   <param name="max_distance_cam_seen"        value="20"/>
 

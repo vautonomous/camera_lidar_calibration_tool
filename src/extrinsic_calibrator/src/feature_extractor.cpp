@@ -37,7 +37,7 @@ Cloud::Ptr FeatureExtractor::extract_image_features(Sample& sample,
       cv::Scalar color(0, 0, 255); // bgr order
       int thickness = 12;
       cv::Point checkerboard_corner = corners.at(i);
-      //cv::circle(sample.image, checkerboard_corner, radius, color, thickness);
+      cv::circle(sample.image, checkerboard_corner, radius, color, thickness);
     }
 
     // Define the 3d points in board frame:
@@ -82,7 +82,7 @@ Cloud::Ptr FeatureExtractor::extract_image_features(Sample& sample,
       cv::Scalar color(0, 255, 0); // bgr order
       int thickness = 12;
       cv::Point checkerboard_corner = corners.at(i);
-      //cv::circle(sample.image, image_points[i], radius, color, thickness);
+      cv::circle(sample.image, image_points[i], radius, color, thickness);
     }
 
     cv::Mat cv_mat_trans_board_to_cam = cv::Mat::eye(4, 4, CV_64F);

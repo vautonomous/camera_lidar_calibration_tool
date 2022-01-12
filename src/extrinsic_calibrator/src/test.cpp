@@ -83,7 +83,7 @@ void Test::project_lidar_points_to_image_plane(Sample& sample,
 
     int radiusCircle = 2;
     cv::Scalar colorCircle1(r,g,b);
-    int thicknessCircle1 = 6;
+    int thicknessCircle1 = 2;
 
     cv::circle(undistortedImage, point_in_image, radiusCircle, colorCircle1, thicknessCircle1);
     count_point_in_img++;
