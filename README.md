@@ -1,4 +1,4 @@
-# wip_camera_lidar_calibration_tool
+# camera_lidar_calibration_tool
 
 
 
